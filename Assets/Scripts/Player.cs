@@ -1,16 +1,15 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
     public static Player Instance;
 
     [Header("Movement")]
-    public float moveSpeed = 4.5f;
+    public float moveSpeed = 7.5f;
 
     [Header("Attack")]
     public float attackRadius = 1.6f;
-    public float attackCooldown = 0.4f;
+    public float attackCooldown = 0.7f;
     public int damage = 1;
 
     [Header("Energy")]
@@ -39,6 +38,7 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         rend = GetComponent<SpriteRenderer>();
+        transform.localScale = Vector3.one * 1.5f;
 
         hp = maxHp;
         currentEnergy = screamEnergy;
@@ -49,7 +49,6 @@ public class Player : MonoBehaviour
         if (VoiceInput.Instance == null)
             return;
 
-        // Энергия крика
         if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
             currentEnergy -= Time.deltaTime;
         else
@@ -57,20 +56,19 @@ public class Player : MonoBehaviour
 
         currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
 
-        // Атака
-        if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
+        if (VoiceInput.Instance.CurrentState == VoiceState.Attack &&
+            currentEnergy > 0 &&
+            Time.time - lastAttackTime >= attackCooldown)
         {
-            if (currentEnergy > 0 && Time.time - lastAttackTime >= attackCooldown)
-            {
-                lastAttackTime = Time.time;
-                Attack();
-            }
+            lastAttackTime = Time.time;
+            Attack();
         }
     }
 
     void FixedUpdate()
     {
         ResolvePenetration();
+
         if (VoiceInput.Instance == null)
             return;
 
@@ -112,6 +110,26 @@ public class Player : MonoBehaviour
         rb.MovePosition(rb.position + slide * moveSpeed * Time.fixedDeltaTime);
     }
 
+    void ResolvePenetration()
+    {
+        Collider2D[] hits = Physics2D.OverlapBoxAll(
+            rb.position,
+            col.bounds.size,
+            0,
+            LayerMask.GetMask("Obstacle", "Wall", "Enemy")
+        );
+
+        foreach (var hit in hits)
+        {
+            if (hit == col)
+                continue;
+
+            ColliderDistance2D dist = col.Distance(hit);
+            if (dist.isOverlapped)
+                rb.position += dist.normal * dist.distance;
+        }
+    }
+
     void Attack()
     {
         int mask = LayerMask.GetMask("Enemy");
@@ -123,20 +141,15 @@ public class Player : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            Enemy enemy = hit.GetComponent<Enemy>();
-            if (enemy != null)
-                enemy.TakeDamage(damage);
+            Enemy e = hit.GetComponent<Enemy>();
+            if (e != null)
+                e.TakeDamage(damage);
         }
     }
 
     public void AbsorbMask(Color color)
     {
         rend.color = color;
-
-        Vector3 scale = transform.localScale;
-        scale += Vector3.one * 0.1f;
-        scale = Vector3.Min(scale, Vector3.one * 2.5f);
-        transform.localScale = scale;
 
         maxHp += 1;
     }
@@ -149,48 +162,7 @@ public class Player : MonoBehaviour
         lastHitTime = Time.time;
         hp -= dmg;
 
-        rend.color = Color.white;
-        Invoke(nameof(RestoreColor), 0.1f);
-
         if (hp <= 0)
-            Die();
+            LevelManager.Instance.RestartRun();
     }
-
-    void RestoreColor()
-    {
-        // оставляем текущий цвет маски
-    }
-
-    void Die()
-    {
-        LevelManager.Instance.RestartRun();
-    }
-
-    void ResolvePenetration()
-{
-    int mask = LayerMask.GetMask("Obstacle", "Wall", "Enemy", "Player");
-
-    Collider2D[] hits = Physics2D.OverlapBoxAll(
-        rb.position,
-        col.bounds.size,
-        0,
-        mask
-    );
-
-    foreach (var hit in hits)
-    {
-        if (hit == col)
-            continue;
-
-        ColliderDistance2D dist = col.Distance(hit);
-
-        if (dist.isOverlapped)
-        {
-            // normal указывает НАПРАВЛЕНИЕ ВЫХОДА
-            rb.position += dist.normal * dist.distance;
-        }
-    }
-}
-
-
 }

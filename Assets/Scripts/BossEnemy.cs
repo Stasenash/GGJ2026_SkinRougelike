@@ -22,15 +22,8 @@ public class BossEnemy : Enemy
 
     protected override void Die()
     {
-        Debug.Log("BOSS DIED");
 
         Player.Instance.AbsorbMask(GetComponent<SpriteRenderer>().color);
-
-        if (GameManager.Instance == null)
-        {
-            Debug.LogError("GameManager.Instance == null");
-            return;
-        }
 
         GameManager.Instance.OnBossKilled();
         Destroy(gameObject);

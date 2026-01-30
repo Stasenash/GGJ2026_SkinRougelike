@@ -3,10 +3,9 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-
     public int wavesBeforeBoss = 3;
 
-    private int currentWave;
+    private int wave;
     private bool bossSpawned;
 
     void Awake()
@@ -16,23 +15,15 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        ResetState();
-    }
-
-    public void ResetState()
-    {
-        currentWave = 0;
+        wave = 0;
         bossSpawned = false;
     }
 
     public void OnWaveCleared()
     {
-        if (bossSpawned)
-            return;
+        wave++;
 
-        currentWave++;
-
-        if (currentWave >= wavesBeforeBoss)
+        if (!bossSpawned && wave >= wavesBeforeBoss)
         {
             bossSpawned = true;
             EnemyManager.Instance.SpawnBoss();
@@ -44,11 +35,6 @@ public class GameManager : MonoBehaviour
     }
 
     public void OnBossKilled()
-    {
-        Invoke(nameof(FinishLevel), 0.8f);
-    }
-
-    void FinishLevel()
     {
         LevelManager.Instance.NextLevel();
     }

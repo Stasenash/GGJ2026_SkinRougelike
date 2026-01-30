@@ -16,28 +16,47 @@ public class ArenaGenerator : MonoBehaviour
     }
 
     void Start()
-{
-    Generate();
-}
+    {
+        Generate();
+    }
 
     public void Generate()
     {
         Clear();
 
-        float size = 10f;
+        float arenaSize = 10f;
 
-        Spawn(wallPrefab, new Vector2(0, size), new Vector3(size*2,1,1));
-        Spawn(wallPrefab, new Vector2(0, -size), new Vector3(size*2,1,1));
-        Spawn(wallPrefab, new Vector2(size, 0), new Vector3(1,size*2,1));
-        Spawn(wallPrefab, new Vector2(-size, 0), new Vector3(1,size*2,1));
+        // Границы арены
+        Spawn(wallPrefab, new Vector2(0, arenaSize), new Vector3(arenaSize * 2, 1, 1));
+        Spawn(wallPrefab, new Vector2(0, -arenaSize), new Vector3(arenaSize * 2, 1, 1));
+        Spawn(wallPrefab, new Vector2(arenaSize, 0), new Vector3(1, arenaSize * 2, 1));
+        Spawn(wallPrefab, new Vector2(-arenaSize, 0), new Vector3(1, arenaSize * 2, 1));
 
-        int obstacles = 4 + LevelManager.Instance.levelIndex * 2;
+        // Маленькие препятствия
+        int obstacleCount = 12 + LevelManager.Instance.levelIndex * 2;
 
-        int level = LevelManager.Instance.levelIndex;
-        for (int i = 0; i < obstacles; i++)
+        for (int i = 0; i < obstacleCount; i++)
         {
-            Vector2 pos = Random.insideUnitCircle.normalized * Random.Range(2f, 7f);
-            Spawn(obstaclePrefab, pos, Vector3.one * Random.Range(1f + level * 0.2f, 1.5f + level * 0.3f));
+            Vector2 pos;
+            int safety = 0;
+
+            do
+            {
+                pos = Random.insideUnitCircle * 7f;
+                safety++;
+            }
+            while (
+                Player.Instance != null &&
+                Vector2.Distance(pos, Player.Instance.transform.position) < 2f &&
+                safety < 20
+            );
+
+            var o = Instantiate(obstaclePrefab, pos, Quaternion.identity);
+
+            float scale = Random.Range(0.25f, 0.4f);
+            o.transform.localScale = Vector3.one * scale;
+
+            spawned.Add(o);
         }
     }
 
@@ -51,9 +70,9 @@ public class ArenaGenerator : MonoBehaviour
     void Clear()
     {
         foreach (var g in spawned)
-            Destroy(g);
+            if (g != null)
+                Destroy(g);
 
         spawned.Clear();
     }
 }
-
