@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7454958982523220153}
   - component: {fileID: 3336721383854450282}
   - component: {fileID: 3784582015367758873}
-  - component: {fileID: 6454526341764654677}
+  - component: {fileID: 1616001923251697480}
   m_Layer: 0
   m_Name: Boss
   m_TagString: BossEnemy
@@ -131,7 +131,7 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &6454526341764654677
+--- !u!114 &1616001923251697480
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -140,9 +140,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 481620286995131926}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f7620e4d6bcc04459e7a432a09fb547, type: 3}
+  m_Script: {fileID: 11500000, guid: 3e833966cd04d384c90602b152de50e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hp: 2
-  speed: 2
+  speed: 1.2
   contactDamage: 1
+  attackCooldown: 0.7

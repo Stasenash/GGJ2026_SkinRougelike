@@ -36,13 +36,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void OnBossKilled()
-    {
-        if (gameFinished)
-            return;
+public void OnBossKilled()
+{
+    Debug.Log("ON BOSS KILLED");
+    Invoke(nameof(FinishLevel), 0.8f);
+}
 
-        gameFinished = true;
-        Debug.Log("WIN");
-        Time.timeScale = 0f;
-    }
+void FinishLevel()
+{
+    Debug.Log("FINISH LEVEL");
+    LevelManager.Instance.NextLevel();
+}
+
+
+void Next()
+{
+    LevelManager.Instance.NextLevel();
+}
+
 }

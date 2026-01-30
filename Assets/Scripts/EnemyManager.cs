@@ -16,10 +16,12 @@ public class EnemyManager : MonoBehaviour
         Instance = this;
     }
 
-    void Start()
-    {
-        SpawnWave();
-    }
+   void Start()
+{
+    SetupForLevel(LevelManager.Instance.levelIndex);
+    SpawnWave();
+}
+
 
     public void SpawnWave()
     {
@@ -68,4 +70,9 @@ public class EnemyManager : MonoBehaviour
 
         return closest;
     }
+    public void SetupForLevel(int level)
+{
+    enemiesPerWave = 4 + level * 2;
+}
+
 }

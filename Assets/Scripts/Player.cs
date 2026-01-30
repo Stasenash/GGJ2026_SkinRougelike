@@ -88,7 +88,6 @@ public float attackRadius = 1.6f;
 
     public void TakeDamage(int dmg)
 {
-    Debug.Log("PLAYER HIT: " + dmg);
 
     if (Time.time - lastHitTime < hitCooldown)
         return;
@@ -111,6 +110,6 @@ public float attackRadius = 1.6f;
 
     void Die()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        LevelManager.Instance.RestartRun();
     }
 }

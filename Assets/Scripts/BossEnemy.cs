@@ -2,19 +2,27 @@ using UnityEngine;
 
 public class BossEnemy : Enemy
 {
-
     void Awake()
     {
         hp = 20;
         speed = 0.6f;
-contactDamage = 2;
+        contactDamage = 2;
         transform.localScale = Vector3.one * 2.5f;
     }
 
     protected override void Die()
-{
-    Player.Instance.AbsorbMask(GetComponent<SpriteRenderer>().color);
-    GameManager.Instance.OnBossKilled();
-    Destroy(gameObject);
-}
+    {
+        Debug.Log("BOSS DIED");
+
+        Player.Instance.AbsorbMask(GetComponent<SpriteRenderer>().color);
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager.Instance == null");
+            return;
+        }
+
+        GameManager.Instance.OnBossKilled();
+        Destroy(gameObject);
+    }
 }
