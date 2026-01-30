@@ -6,7 +6,7 @@ public class Player : MonoBehaviour
     public static Player Instance;
 
     public float moveSpeed = 4.5f;
-public float attackRadius = 1.8f;
+public float attackRadius = 1.6f;
     public int damage = 1;
 
     public int maxHp = 10;
@@ -15,6 +15,9 @@ public float attackRadius = 1.8f;
     private SpriteRenderer rend;
     private float hitCooldown = 0.5f;
     private float lastHitTime = -10f;
+    public float attackCooldown = 0.4f;
+    private float lastAttackTime = -10f;
+
 
     void Awake()
     {
@@ -53,15 +56,23 @@ public float attackRadius = 1.8f;
     }
 
     void Attack()
+{
+    if (Time.time - lastAttackTime < attackCooldown)
+        return;
+
+    lastAttackTime = Time.time;
+
+    float radius = attackRadius * 1.5f;
+
+    Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius);
+    foreach (var hit in hits)
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRadius);
-        foreach (var hit in hits)
-        {
-            Enemy enemy = hit.GetComponent<Enemy>();
-            if (enemy != null)
-                enemy.TakeDamage(damage);
-        }
+        Enemy enemy = hit.GetComponent<Enemy>();
+        if (enemy != null)
+            enemy.TakeDamage(damage);
     }
+}
+
 
     public void AbsorbMask(Color color)
     {
