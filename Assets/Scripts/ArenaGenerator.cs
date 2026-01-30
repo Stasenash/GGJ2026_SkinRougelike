@@ -33,10 +33,11 @@ public class ArenaGenerator : MonoBehaviour
 
         int obstacles = 4 + LevelManager.Instance.levelIndex * 2;
 
+        int level = LevelManager.Instance.levelIndex;
         for (int i = 0; i < obstacles; i++)
         {
-            Vector2 pos = Random.insideUnitCircle * 7f;
-            Spawn(obstaclePrefab, pos, Vector3.one * Random.Range(1f, 1.5f));
+            Vector2 pos = Random.insideUnitCircle.normalized * Random.Range(2f, 7f);
+            Spawn(obstaclePrefab, pos, Vector3.one * Random.Range(1f + level * 0.2f, 1.5f + level * 0.3f));
         }
     }
 
@@ -55,3 +56,4 @@ public class ArenaGenerator : MonoBehaviour
         spawned.Clear();
     }
 }
+

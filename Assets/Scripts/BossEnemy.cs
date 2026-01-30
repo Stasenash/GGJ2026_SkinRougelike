@@ -10,6 +10,16 @@ public class BossEnemy : Enemy
         transform.localScale = Vector3.one * 2.5f;
     }
 
+    void Update()
+    {
+        if (hp < 10)
+    speed = 1.0f;
+
+    if (hp < 5)
+        contactDamage = 4;
+
+    }
+
     protected override void Die()
     {
         Debug.Log("BOSS DIED");

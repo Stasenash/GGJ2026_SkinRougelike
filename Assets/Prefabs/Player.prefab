@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6477725762649879746}
   - component: {fileID: 7581978880334670809}
   - component: {fileID: 1276797084858631961}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -149,6 +149,7 @@ MonoBehaviour:
   damage: 1
   maxHp: 10
   attackCooldown: 0.4
+  screamEnergy: 3
 --- !u!1 &5214485082104926758
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,7 +161,7 @@ GameObject:
   - component: {fileID: 3620301143729024804}
   - component: {fileID: 2847836470089698266}
   - component: {fileID: 3534808420045016626}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: VoiceIndicator
   m_TagString: Untagged
   m_Icon: {fileID: 0}

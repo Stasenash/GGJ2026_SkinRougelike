@@ -17,6 +17,10 @@ public float attackRadius = 1.6f;
     private float lastHitTime = -10f;
     public float attackCooldown = 0.4f;
     private float lastAttackTime = -10f;
+    public float screamEnergy = 3f;
+private float currentEnergy;
+public float collisionShrink = 0.75f;
+
 
 
     void Awake()
@@ -26,37 +30,93 @@ public float attackRadius = 1.6f;
 
     void Start()
     {
+        currentEnergy = screamEnergy;
         rend = GetComponent<SpriteRenderer>();
         hp = maxHp;
     }
 
     void Update()
-    {
-        if (VoiceInput.Instance == null)
-            return;
+{
 
-        switch (VoiceInput.Instance.CurrentState)
-        {
-            case VoiceState.Move:
-                Move();
-                break;
-            case VoiceState.Attack:
+    if (VoiceInput.Instance == null)
+        return;
+
+    // 1. Энергия
+    if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
+        currentEnergy -= Time.deltaTime;
+    else
+        currentEnergy += Time.deltaTime * 0.8f;
+
+    currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
+
+    // 2. Управление
+    switch (VoiceInput.Instance.CurrentState)
+    {
+        case VoiceState.Move:
+            Move();
+            break;
+
+        case VoiceState.Attack:
+            if (currentEnergy > 0)
                 Attack();
-                break;
-        }
+            break;
     }
+}
+
 
     void Move()
-    {
-        Enemy target = EnemyManager.Instance.GetClosestEnemy(transform.position);
-        if (target == null) return;
+{
+    Enemy target = EnemyManager.Instance.GetClosestEnemy(transform.position);
+    if (target == null) return;
 
-        Vector3 dir = (target.transform.position - transform.position).normalized;
-        transform.position += dir * moveSpeed * Time.deltaTime;
+    Vector3 dir = (target.transform.position - transform.position).normalized;
+    Vector3 delta = dir * moveSpeed * Time.deltaTime;
+
+    TryMove(delta);
+}
+
+void TryMove(Vector3 delta)
+{
+    if (CanMove(delta))
+    {
+        transform.position += delta;
+        return;
     }
+
+    Vector3 xOnly = new Vector3(delta.x, 0, 0);
+    if (CanMove(xOnly))
+    {
+        transform.position += xOnly;
+        return;
+    }
+
+    Vector3 yOnly = new Vector3(0, delta.y, 0);
+    if (CanMove(yOnly))
+    {
+        transform.position += yOnly;
+    }
+}
+
+bool CanMove(Vector3 delta)
+{
+    Vector3 nextPos = transform.position + delta;
+
+    Vector2 checkSize = (Vector2)transform.localScale * collisionShrink;
+
+    return !Physics2D.OverlapBox(
+        nextPos,
+        checkSize,
+        0,
+        LayerMask.GetMask("Obstacle", "Wall"));
+}
+
 
     void Attack()
 {
+
+    if (currentEnergy <= 0)
+    return;
+
     if (Time.time - lastAttackTime < attackCooldown)
         return;
 

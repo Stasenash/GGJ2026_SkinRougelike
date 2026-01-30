@@ -6,20 +6,27 @@ public class GameManager : MonoBehaviour
 
     public int wavesBeforeBoss = 3;
 
-    private int currentWave = 0;
-    private bool bossSpawned = false;
-    private bool gameFinished = false;
+    private int currentWave;
+    private bool bossSpawned;
 
     void Awake()
     {
         Instance = this;
     }
 
+    void Start()
+    {
+        ResetState();
+    }
+
+    public void ResetState()
+    {
+        currentWave = 0;
+        bossSpawned = false;
+    }
+
     public void OnWaveCleared()
     {
-        if (gameFinished)
-            return;
-
         if (bossSpawned)
             return;
 
@@ -36,22 +43,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-public void OnBossKilled()
-{
-    Debug.Log("ON BOSS KILLED");
-    Invoke(nameof(FinishLevel), 0.8f);
-}
+    public void OnBossKilled()
+    {
+        Invoke(nameof(FinishLevel), 0.8f);
+    }
 
-void FinishLevel()
-{
-    Debug.Log("FINISH LEVEL");
-    LevelManager.Instance.NextLevel();
-}
-
-
-void Next()
-{
-    LevelManager.Instance.NextLevel();
-}
-
+    void FinishLevel()
+    {
+        LevelManager.Instance.NextLevel();
+    }
 }
