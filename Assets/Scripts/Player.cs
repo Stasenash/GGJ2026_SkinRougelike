@@ -5,23 +5,29 @@ public class Player : MonoBehaviour
 {
     public static Player Instance;
 
+    [Header("Movement")]
     public float moveSpeed = 4.5f;
-public float attackRadius = 1.6f;
+
+    [Header("Attack")]
+    public float attackRadius = 1.6f;
+    public float attackCooldown = 0.4f;
     public int damage = 1;
 
-    public int maxHp = 10;
-    private int hp;
-
-    private SpriteRenderer rend;
-    private float hitCooldown = 0.5f;
-    private float lastHitTime = -10f;
-    public float attackCooldown = 0.4f;
-    private float lastAttackTime = -10f;
+    [Header("Energy")]
     public float screamEnergy = 3f;
-private float currentEnergy;
-public float collisionShrink = 0.75f;
+    private float currentEnergy;
 
+    [Header("Health")]
+    public int maxHp = 10;
 
+    private int hp;
+    private float lastAttackTime = -10f;
+    private float lastHitTime = -10f;
+    private float hitCooldown = 0.5f;
+
+    private Rigidbody2D rb;
+    private Collider2D col;
+    private SpriteRenderer rend;
 
     void Awake()
     {
@@ -30,109 +36,98 @@ public float collisionShrink = 0.75f;
 
     void Start()
     {
-        currentEnergy = screamEnergy;
+        rb = GetComponent<Rigidbody2D>();
+        col = GetComponent<Collider2D>();
         rend = GetComponent<SpriteRenderer>();
+
         hp = maxHp;
+        currentEnergy = screamEnergy;
     }
 
     void Update()
-{
-
-    if (VoiceInput.Instance == null)
-        return;
-
-    // 1. Энергия
-    if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
-        currentEnergy -= Time.deltaTime;
-    else
-        currentEnergy += Time.deltaTime * 0.8f;
-
-    currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
-
-    // 2. Управление
-    switch (VoiceInput.Instance.CurrentState)
     {
-        case VoiceState.Move:
-            Move();
-            break;
+        if (VoiceInput.Instance == null)
+            return;
 
-        case VoiceState.Attack:
-            if (currentEnergy > 0)
+        // Энергия крика
+        if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
+            currentEnergy -= Time.deltaTime;
+        else
+            currentEnergy += Time.deltaTime * 0.8f;
+
+        currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
+
+        // Атака
+        if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
+        {
+            if (currentEnergy > 0 && Time.time - lastAttackTime >= attackCooldown)
+            {
+                lastAttackTime = Time.time;
                 Attack();
-            break;
+            }
+        }
     }
-}
 
+    void FixedUpdate()
+    {
+        ResolvePenetration();
+        if (VoiceInput.Instance == null)
+            return;
+
+        if (VoiceInput.Instance.CurrentState == VoiceState.Move)
+            Move();
+    }
 
     void Move()
-{
-    Enemy target = EnemyManager.Instance.GetClosestEnemy(transform.position);
-    if (target == null) return;
-
-    Vector3 dir = (target.transform.position - transform.position).normalized;
-    Vector3 delta = dir * moveSpeed * Time.deltaTime;
-
-    TryMove(delta);
-}
-
-void TryMove(Vector3 delta)
-{
-    if (CanMove(delta))
     {
-        transform.position += delta;
-        return;
+        Enemy target = EnemyManager.Instance.GetClosestEnemy(transform.position);
+        if (target == null)
+            return;
+
+        Vector2 dir = (target.transform.position - transform.position).normalized;
+        Vector2 delta = dir * moveSpeed * Time.fixedDeltaTime;
+
+        MoveWithSlide(delta);
     }
 
-    Vector3 xOnly = new Vector3(delta.x, 0, 0);
-    if (CanMove(xOnly))
+    void MoveWithSlide(Vector2 delta)
     {
-        transform.position += xOnly;
-        return;
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(LayerMask.GetMask("Obstacle", "Wall"));
+        filter.useTriggers = false;
+
+        RaycastHit2D[] hits = new RaycastHit2D[4];
+        int count = col.Cast(delta.normalized, filter, hits, delta.magnitude);
+
+        if (count == 0)
+        {
+            rb.MovePosition(rb.position + delta);
+            return;
+        }
+
+        Vector2 normal = hits[0].normal;
+        Vector2 slide = Vector2.Perpendicular(normal);
+        slide *= Vector2.Dot(slide, delta.normalized);
+
+        rb.MovePosition(rb.position + slide * moveSpeed * Time.fixedDeltaTime);
     }
-
-    Vector3 yOnly = new Vector3(0, delta.y, 0);
-    if (CanMove(yOnly))
-    {
-        transform.position += yOnly;
-    }
-}
-
-bool CanMove(Vector3 delta)
-{
-    Vector3 nextPos = transform.position + delta;
-
-    Vector2 checkSize = (Vector2)transform.localScale * collisionShrink;
-
-    return !Physics2D.OverlapBox(
-        nextPos,
-        checkSize,
-        0,
-        LayerMask.GetMask("Obstacle", "Wall"));
-}
-
 
     void Attack()
-{
-
-    if (currentEnergy <= 0)
-    return;
-
-    if (Time.time - lastAttackTime < attackCooldown)
-        return;
-
-    lastAttackTime = Time.time;
-
-    float radius = attackRadius * 1.5f;
-
-    Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius);
-    foreach (var hit in hits)
     {
-        Enemy enemy = hit.GetComponent<Enemy>();
-        if (enemy != null)
-            enemy.TakeDamage(damage);
-    }
-}
+        int mask = LayerMask.GetMask("Enemy");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(
+            transform.position,
+            attackRadius * 1.5f,
+            mask
+        );
 
+        foreach (var hit in hits)
+        {
+            Enemy enemy = hit.GetComponent<Enemy>();
+            if (enemy != null)
+                enemy.TakeDamage(damage);
+        }
+    }
 
     public void AbsorbMask(Color color)
     {
@@ -147,29 +142,55 @@ bool CanMove(Vector3 delta)
     }
 
     public void TakeDamage(int dmg)
-{
+    {
+        if (Time.time - lastHitTime < hitCooldown)
+            return;
 
-    if (Time.time - lastHitTime < hitCooldown)
-        return;
+        lastHitTime = Time.time;
+        hp -= dmg;
 
-    lastHitTime = Time.time;
-    hp -= dmg;
+        rend.color = Color.white;
+        Invoke(nameof(RestoreColor), 0.1f);
 
-    rend.color = Color.white;
-    Invoke(nameof(RestoreColor), 0.1f);
-
-    if (hp <= 0)
-        Die();
-}
-
+        if (hp <= 0)
+            Die();
+    }
 
     void RestoreColor()
-{
-    rend.color = ColorManager.Instance.GetEnemyColor();
-}
+    {
+        // оставляем текущий цвет маски
+    }
 
     void Die()
     {
         LevelManager.Instance.RestartRun();
     }
+
+    void ResolvePenetration()
+{
+    int mask = LayerMask.GetMask("Obstacle", "Wall", "Enemy", "Player");
+
+    Collider2D[] hits = Physics2D.OverlapBoxAll(
+        rb.position,
+        col.bounds.size,
+        0,
+        mask
+    );
+
+    foreach (var hit in hits)
+    {
+        if (hit == col)
+            continue;
+
+        ColliderDistance2D dist = col.Distance(hit);
+
+        if (dist.isOverlapped)
+        {
+            // normal указывает НАПРАВЛЕНИЕ ВЫХОДА
+            rb.position += dist.normal * dist.distance;
+        }
+    }
+}
+
+
 }

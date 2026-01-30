@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3336721383854450282}
   - component: {fileID: 3784582015367758873}
   - component: {fileID: 1616001923251697480}
+  - component: {fileID: 734126102773840694}
   m_Layer: 7
   m_Name: Boss
   m_TagString: BossEnemy
@@ -146,4 +147,30 @@ MonoBehaviour:
   hp: 2
   speed: 1.2
   contactDamage: 1
-  attackCooldown: 0.7
+--- !u!50 &734126102773840694
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 481620286995131926}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 4

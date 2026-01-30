@@ -5,170 +5,92 @@ public class Enemy : MonoBehaviour
     public int hp = 2;
     public float speed = 1.2f;
     public int contactDamage = 1;
-    public float attackCooldown = 0.7f;
 
-    private int stuckFrames = 0;
-private const int STUCK_LIMIT = 12;
-private Vector3 escapeDir;
-
-
-    protected SpriteRenderer rend;
-    private float lastAttackTime = -10f;
-    public float collisionShrink = 1.0f;
+    private Rigidbody2D rb;
+    private Collider2D col;
 
     void Start()
-{
-    escapeDir = Random.insideUnitCircle.normalized;
-
-    rend = GetComponent<SpriteRenderer>();
-    rend.color = ColorManager.Instance.GetEnemyColor();
-
-    hp = EnemyManager.Instance.baseEnemyHp;
-    contactDamage = EnemyManager.Instance.baseEnemyDamage;
-}
-
-
-    void Update()
     {
-            if (Player.Instance == null)
-        return;
+        rb = GetComponent<Rigidbody2D>();
+        col = GetComponent<Collider2D>();
 
-    ResolveObstacles();
-    MoveTowardsPlayer();
-    TryDamagePlayer();
+        hp = EnemyManager.Instance.baseEnemyHp;
+        contactDamage = EnemyManager.Instance.baseEnemyDamage;
     }
 
-    void MoveTowardsPlayer()
-{
-    Vector3 dir = (Player.Instance.transform.position - transform.position).normalized;
-    Vector3 delta = dir * speed * Time.deltaTime;
-
-    TryMove(delta);
-}
-
-void TryMove(Vector3 delta)
-{
-    bool moved = false;
-
-    if (CanMove(delta))
+    void FixedUpdate()
     {
-        transform.position += delta;
-        moved = true;
+        ResolvePenetration();
+        if (Player.Instance == null)
+            return;
+
+        Vector2 dir = (Player.Instance.transform.position - transform.position).normalized;
+        Vector2 delta = dir * speed * Time.fixedDeltaTime;
+
+        MoveWithSlide(delta);
+        TryDamagePlayer();
     }
-    else
+
+    void MoveWithSlide(Vector2 delta)
     {
-        Vector3 xOnly = new Vector3(delta.x, 0, 0);
-        if (CanMove(xOnly))
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(LayerMask.GetMask("Obstacle", "Wall"));
+        filter.useTriggers = false;
+
+        RaycastHit2D[] hits = new RaycastHit2D[4];
+
+        int count = col.Cast(delta.normalized, filter, hits, delta.magnitude);
+
+        if (count == 0)
         {
-            transform.position += xOnly;
-            moved = true;
+            rb.MovePosition(rb.position + delta);
+            return;
         }
-        else
+
+        // скольжение вдоль поверхности
+        Vector2 normal = hits[0].normal;
+        Vector2 slide = Vector2.Perpendicular(normal);
+        slide *= Vector2.Dot(slide, delta.normalized);
+
+        rb.MovePosition(rb.position + slide * speed * Time.fixedDeltaTime);
+    }
+
+    void TryDamagePlayer()
+    {
+        float dist = Vector2.Distance(transform.position, Player.Instance.transform.position);
+        if (dist < (transform.localScale.x + Player.Instance.transform.localScale.x) * 0.5f)
         {
-            Vector3 yOnly = new Vector3(0, delta.y, 0);
-            if (CanMove(yOnly))
-            {
-                transform.position += yOnly;
-                moved = true;
-            }
-            else
-            {
-                Vector3 perp = new Vector3(-delta.y, delta.x, 0).normalized * 0.02f;
-                if (CanMove(perp))
-                {
-                    transform.position += perp;
-                    moved = true;
-                }
-            }
+            Player.Instance.TakeDamage(contactDamage);
         }
     }
-
-    if (moved)
-    {
-        stuckFrames = 0;
-        return;
-    }
-
-    // 🚨 АНТИ-СТАК
-    stuckFrames++;
-
-    if (stuckFrames >= STUCK_LIMIT)
-    {
-        Vector3 escape = escapeDir * speed * Time.deltaTime;
-        if (CanMove(escape))
-        {
-            transform.position += escape;
-            stuckFrames = 0;
-        }
-    }
-}
-
-
-void ResolveObstacles()
+    void ResolvePenetration()
 {
+    int mask = LayerMask.GetMask("Obstacle", "Wall", "Enemy", "Player");
+
     Collider2D[] hits = Physics2D.OverlapBoxAll(
-        transform.position,
-        transform.localScale,
+        rb.position,
+        col.bounds.size,
         0,
-        LayerMask.GetMask("Obstacle", "Wall")
+        mask
     );
 
     foreach (var hit in hits)
     {
-        Vector3 pushDir = transform.position - hit.transform.position;
+        if (hit == col)
+            continue;
 
-        if (pushDir == Vector3.zero)
-            pushDir = Random.insideUnitCircle;
+        ColliderDistance2D dist = col.Distance(hit);
 
-        transform.position += pushDir.normalized * 0.05f;
-    }
-}
-
-
-
-bool CanMove(Vector3 delta)
-{
-    Vector3 nextPos = transform.position + delta;
-
-    return !Physics2D.OverlapBox(
-        nextPos,
-        transform.localScale,
-        0,
-        LayerMask.GetMask("Obstacle", "Wall"));
-}
-
-    void TryDamagePlayer()
-    {
-        float playerRadius = Player.Instance.transform.localScale.x * 0.5f;
-        float enemyRadius = transform.localScale.x * 0.5f;
-
-        float dist = Vector3.Distance(transform.position, Player.Instance.transform.position);
-
-        if (dist <= playerRadius + enemyRadius)
+        if (dist.isOverlapped)
         {
-            if (Time.time - lastAttackTime >= attackCooldown)
-            {
-                lastAttackTime = Time.time;
-                Player.Instance.TakeDamage(contactDamage);
-
-                ForceSeparation(playerRadius, enemyRadius);
-            }
+            // normal указывает НАПРАВЛЕНИЕ ВЫХОДА
+            rb.position += dist.normal * dist.distance;
         }
     }
-
-    void ForceSeparation(float playerRadius, float enemyRadius)
-    {
-        Vector3 dir = (transform.position - Player.Instance.transform.position).normalized;
-        if (dir == Vector3.zero)
-            dir = Random.insideUnitCircle.normalized;
-
-        transform.position = Player.Instance.transform.position +
-                             dir * (playerRadius + enemyRadius + 0.05f);
-    }
+}
 
     public void TakeDamage(int dmg)
     {
-        Debug.Log("ENEMY TAKE DAMAGE");
         hp -= dmg;
         if (hp <= 0)
             Die();
@@ -176,9 +98,8 @@ bool CanMove(Vector3 delta)
 
     protected virtual void Die()
     {
-        Debug.Log("ENEMY DIED");
-    Player.Instance.AbsorbMask(rend.color);
-    EnemyManager.Instance.OnEnemyKilled(this);
-    Destroy(gameObject);
+        Player.Instance.AbsorbMask(GetComponent<SpriteRenderer>().color);
+        EnemyManager.Instance.OnEnemyKilled(this);
+        Destroy(gameObject);
     }
 }
