@@ -2,10 +2,12 @@ using UnityEngine;
 
 public class BossEnemy : Enemy
 {
+
     void Awake()
     {
         hp = 20;
-        speed = 0.8f;
+        speed = 0.6f;
+contactDamage = 2;
         transform.localScale = Vector3.one * 2.5f;
     }
 

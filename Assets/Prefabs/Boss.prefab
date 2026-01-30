@@ -145,3 +145,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hp: 2
   speed: 2
+  contactDamage: 1
