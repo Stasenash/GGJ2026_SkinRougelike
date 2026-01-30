@@ -9,6 +9,9 @@ public class Enemy : MonoBehaviour
     protected Rigidbody2D rb;
     protected Collider2D col;
 
+    public MaskType maskType;
+protected MaskData mask;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -16,6 +19,12 @@ public class Enemy : MonoBehaviour
 
         hp = EnemyManager.Instance.baseEnemyHp;
         contactDamage = EnemyManager.Instance.baseEnemyDamage;
+
+        mask = MaskDatabase.Instance.GetRandom();
+maskType = mask.type;
+
+GetComponent<SpriteRenderer>().color = mask.color;
+
     }
 
     void FixedUpdate()
@@ -79,16 +88,26 @@ public class Enemy : MonoBehaviour
     }
 
     void TryDamagePlayer()
-    {
-        float dist = Vector2.Distance(transform.position, Player.Instance.transform.position);
-        float min = (transform.localScale.x + Player.Instance.transform.localScale.x) * 0.5f;
+{
+    Debug.Log("try damage");
+    if (Player.Instance == null)
+        return;
 
-        if (dist < min)
-            Player.Instance.TakeDamage(contactDamage);
+    float dist = Vector2.Distance(rb.position, Player.Instance.transform.position);
+
+    float hitDistance =
+        (col.bounds.extents.x + Player.Instance.GetComponent<Collider2D>().bounds.extents.x);
+
+    if (dist <= hitDistance)
+    {
+        Player.Instance.TakeDamage(contactDamage);
     }
+}
+
 
     public void TakeDamage(int dmg)
     {
+        Debug.Log("damage");
         hp -= dmg;
         if (hp <= 0)
             Die();

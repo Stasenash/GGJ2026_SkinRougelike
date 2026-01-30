@@ -8,6 +8,11 @@ public class BossEnemy : Enemy
         speed = 0.6f;
         contactDamage = 2;
         transform.localScale = Vector3.one * 2.5f;
+
+        mask = MaskDatabase.Instance.GetRandom();
+maskType = mask.type;
+
+GetComponent<SpriteRenderer>().color = mask.color;
     }
 
     void Update()

@@ -25,12 +25,12 @@ public class EnemyManager : MonoBehaviour
         SpawnWave();
     }
 
-    public void SetupForLevel(int level)
-    {
-        enemiesPerWave = 6 + level * 3;
-        baseEnemyHp = 2 + level;
-        baseEnemyDamage = 1 + level / 2;
-    }
+   public void SetupForLevel(int level)
+{
+    enemiesPerWave = 6 + level * 2;
+    baseEnemyHp = 2 + level;
+    baseEnemyDamage = 1 + level / 2;
+}
 
     public void SpawnWave()
     {
