@@ -16,7 +16,7 @@ public class VoiceIndicator : MonoBehaviour
     {
         var state = VoiceInput.Instance.CurrentState;
 
-        if (state == VoiceState.Idle)
+        if (state == VoiceState.Move)
         {
             rend.enabled = false;
             return;
@@ -24,7 +24,7 @@ public class VoiceIndicator : MonoBehaviour
 
         rend.enabled = true;
 
-        if (state == VoiceState.Move)
+        if (state == VoiceState.Talk)
         {
             rend.color = Color.white;
             transform.localScale = baseScale;

@@ -2,8 +2,8 @@ using UnityEngine;
 
 public enum VoiceState
 {
-    Idle,
     Move,
+    Talk,
     Attack
 }
 
@@ -32,9 +32,9 @@ public class VoiceInput : MonoBehaviour
         float volume = GetVolume();
 
         if (volume < 0.1f)
-            CurrentState = VoiceState.Idle;
-        else if (volume < 0.2f)
             CurrentState = VoiceState.Move;
+        else if (volume < 0.2f)
+            CurrentState = VoiceState.Talk;
         else
             CurrentState = VoiceState.Attack;
     }

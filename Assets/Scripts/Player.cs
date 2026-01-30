@@ -36,6 +36,8 @@ public class Player : MonoBehaviour
     private Collider2D col;
     private SpriteRenderer rend;
     public int CurrentHp => hp;
+    private VoiceState lastVoiceState;
+
 
 
     void Awake()
@@ -69,23 +71,27 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        if (VoiceInput.Instance == null)
-            return;
+        VoiceState state = VoiceInput.Instance.CurrentState;
 
-        if (VoiceInput.Instance.CurrentState == VoiceState.Attack)
-            currentEnergy -= Time.deltaTime;
-        else
-            currentEnergy += Time.deltaTime * 0.8f;
+// энергия
+if (state == VoiceState.Attack)
+    currentEnergy -= Time.deltaTime;
+else
+    currentEnergy += Time.deltaTime * 1.2f; // быстрее восстановление
 
-        currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
+currentEnergy = Mathf.Clamp(currentEnergy, 0, screamEnergy);
 
-        if (VoiceInput.Instance.CurrentState == VoiceState.Attack &&
-            currentEnergy > 0 &&
-            Time.time - lastAttackTime >= attackCooldown)
-        {
-            lastAttackTime = Time.time;
-            Attack();
-        }
+// ВХОД В КРИК = АТАКА
+if (state == VoiceState.Attack &&
+    lastVoiceState != VoiceState.Attack &&
+    currentEnergy > 0.3f)
+{
+    Attack();
+    currentEnergy -= 0.5f; // цена выброса
+}
+
+lastVoiceState = state;
+
     }
 
     void FixedUpdate()
@@ -93,10 +99,10 @@ public class Player : MonoBehaviour
         ResolvePenetration();
 
         if (VoiceInput.Instance != null &&
-            VoiceInput.Instance.CurrentState == VoiceState.Move)
-        {
-            Move();
-        }
+    VoiceInput.Instance.CurrentState == VoiceState.Talk)
+{
+    Move();
+}
     }
 
     // ================= ДВИЖЕНИЕ =================
